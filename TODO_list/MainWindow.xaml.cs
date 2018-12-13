@@ -13,6 +13,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Collections.ObjectModel;
+using System.Data.SQLite;
+
 
 namespace TODO_list
 {
@@ -38,6 +40,8 @@ namespace TODO_list
         private Point startPoint = new Point();
         private ObservableCollection<WorkItem> _items = new ObservableCollection<WorkItem>();
         private int startIndex = -1;
+        private SQLiteConnection connDB = null;
+        private string defaultDBpath = "C:/Users/Samsung/Desktop/TODO_list/TODO_list/db/record.sqlite";
 
         public MainWindow()
         {
@@ -46,6 +50,13 @@ namespace TODO_list
             this.PreviewKeyDown += new KeyEventHandler(HandleEsc);
 
             initializeListView();
+
+            // Initialize the DB
+            // Check already exist DB, otherwise create new DB
+            SQLiteConnection.CreateFile(this.defaultDBpath);
+            connDB = new SQLiteConnection("Data Source=C:/Users/Samsung/Desktop/TODO_list/TODO_list/db/record.sqlite;Version=3;");
+            connDB.Open();
+            //SQLiteConnection.CreateFile("db/record.sqlite");
         }
 
         private void HandleEsc(object sender, KeyEventArgs e)

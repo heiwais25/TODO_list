@@ -11,9 +11,7 @@
         Background="{x:Null}">
     <Border BorderBrush="Gray" BorderThickness="0" Margin="5" Background="White">
         <Border.Effect>
-
             <DropShadowEffect ShadowDepth="0" BlurRadius="10" Color="Gray" />
-
         </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
@@ -24,33 +22,38 @@
                 <ColumnDefinition/>
                 <ColumnDefinition Width="0*"/>
             </Grid.ColumnDefinitions>
-
-            <DockPanel HorizontalAlignment="Left" Height="28" LastChildFill="True" VerticalAlignment="Top" Width="436" PreviewMouseMove="System_MouseMove">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="36*"/>
-                        <ColumnDefinition Width="149*"/>
-                        <ColumnDefinition Width="29*"/>
-                    </Grid.ColumnDefinitions>
-                </Grid>
-                <Label Content="TODO List" Height="28" VerticalAlignment="Top" Width="376" FontFamily="Consolas"/>
-                <Border x:Name="MinimizeButtonBorder">
-                    <Image x:Name="MinimizeButton" Source="resource/minus_icon.png" HorizontalAlignment="Left" Height="28" Width="25" RenderTransformOrigin="15.515,0.571" Stretch="Fill" StretchDirection="DownOnly" VerticalAlignment="Bottom" MouseDown="Image_MouseDown_1" Opacity="0.995" MouseEnter="MinimizeButton_MouseEnter" MouseLeave="MinimizeButton_MouseLeave"/>
-                </Border>
-                <Border x:Name="ExitButtonBorder">
-                    <Image x:Name="ExitButton" Source="resource/exit_icon_4.png" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="25" RenderTransformOrigin="15.515,0.571" MouseDown="Image_MouseDown" MouseEnter="ExitButton_MouseEnter" MouseLeave="ExitButton_MouseLeave"/>
-                </Border>
-            </DockPanel>
+            <Border>
+                <Border.Effect>
+                    <DropShadowEffect ShadowDepth="2" BlurRadius="3" Color="Gray" />
+                </Border.Effect>
+                <DockPanel Background="White" HorizontalAlignment="Left" Height="28" LastChildFill="True" VerticalAlignment="Top" Width="436" PreviewMouseMove="System_MouseMove">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="36*"/>
+                            <ColumnDefinition Width="149*"/>
+                            <ColumnDefinition Width="29*"/>
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                    <Label Content="TODO List" Height="28" VerticalAlignment="Top" Width="376" FontFamily="Consolas"/>
+                    <Border x:Name="MinimizeButtonBorder">
+                        <Image x:Name="MinimizeButton" Source="resource/minus_icon.png" HorizontalAlignment="Left" Height="28" Width="25" RenderTransformOrigin="15.515,0.571" Stretch="Fill" StretchDirection="DownOnly" VerticalAlignment="Bottom" MouseDown="Image_MouseDown_1" Opacity="0.995" MouseEnter="MinimizeButton_MouseEnter" MouseLeave="MinimizeButton_MouseLeave"/>
+                    </Border>
+                    <Border x:Name="ExitButtonBorder">
+                        <Image x:Name="ExitButton" Source="resource/exit_icon_4.png" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="25" RenderTransformOrigin="15.515,0.571" MouseDown="Image_MouseDown" MouseEnter="ExitButton_MouseEnter" MouseLeave="ExitButton_MouseLeave"/>
+                    </Border>
+                </DockPanel>
+            </Border>
 
             <DockPanel Margin="0,28,0,452">
                 <Grid Width="428">
-                    <Label Content="Total Tasks" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="15" FontFamily="Consolas" HorizontalContentAlignment="Center" Margin="45,10,0,0"/>
+                    <Label Content="Total" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="15" FontFamily="Consolas" HorizontalContentAlignment="Center" Margin="90,10,0,0"/>
                     <Label Content="Done" HorizontalAlignment="Left" Margin="174,10,0,0" VerticalAlignment="Top" Width="70" FontSize="15" FontFamily="Consolas" HorizontalContentAlignment="Center"/>
                     <Label Content="TODO" HorizontalAlignment="Left" Margin="277,10,0,0" VerticalAlignment="Top" Width="70" FontSize="15" FontFamily="Consolas" HorizontalContentAlignment="Center"/>
                     <Image Source="resource/arrow_icon_3.png" Height="55" VerticalAlignment="Top" Width="56" HorizontalAlignment="Right" Margin="0,14,0,0"/>
-                    <Label x:Name="TotalTaskNumberLabel" Content="Label" HorizontalAlignment="Left" Margin="74,40,0,0" VerticalAlignment="Top"/>
-                    <Label x:Name="DoneTaskNumberLabel" Content="Label" HorizontalAlignment="Left" Margin="188,40,0,0" VerticalAlignment="Top"/>
-                    <Label x:Name="TodoTaskNumberLabel" Content="Label" HorizontalAlignment="Left" Margin="292,40,0,0" VerticalAlignment="Top"/>
+                    <Label x:Name="TotalTaskNumberLabel" Content="Label" HorizontalAlignment="Left" Margin="97,43,0,0" VerticalAlignment="Top"/>
+                    <Label x:Name="DoneTaskNumberLabel" Content="Label" HorizontalAlignment="Left" Margin="188,43,0,0" VerticalAlignment="Top"/>
+                    <Label x:Name="TodoTaskNumberLabel" Content="Label" HorizontalAlignment="Left" Margin="292,43,0,0" VerticalAlignment="Top"/>
+                    <Label Content=" Task &#xD;&#xA;Status" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="15" FontFamily="Consolas" Margin="0,26,0,0" Height="43" VerticalContentAlignment="Center"/>
                 </Grid>
             </DockPanel>
 

@@ -5,3 +5,8 @@
 /TODO_list/bin/Debug
 /TODO_list/obj/Debug
 /.vs/TODO_list/v15
+/TODO_list/obj/x64/Debug
+/TODO_list/obj/x86/Debug/TempPE
+/TODO_list/obj/x86/Debug
+/TODO_list/bin/x64/Debug
+/TODO_list/db
