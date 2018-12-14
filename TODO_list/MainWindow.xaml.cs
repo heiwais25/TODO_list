@@ -41,7 +41,7 @@ namespace TODO_list
         private ObservableCollection<WorkItem> _items = new ObservableCollection<WorkItem>();
         private int startIndex = -1;
         private SQLiteConnection connDB = null;
-        private string defaultDBpath = "C:/Users/Samsung/Desktop/TODO_list/TODO_list/db/record.sqlite";
+        private string defaultDBpath = System.Environment.CurrentDirectory + "/db/record.sqlite";
 
         public MainWindow()
         {
@@ -53,10 +53,44 @@ namespace TODO_list
 
             // Initialize the DB
             // Check already exist DB, otherwise create new DB
-            SQLiteConnection.CreateFile(this.defaultDBpath);
-            connDB = new SQLiteConnection("Data Source=C:/Users/Samsung/Desktop/TODO_list/TODO_list/db/record.sqlite;Version=3;");
-            connDB.Open();
-            //SQLiteConnection.CreateFile("db/record.sqlite");
+            System.IO.FileInfo fi = new System.IO.FileInfo(this.defaultDBpath);
+            if (!fi.Exists)
+            {
+                SQLiteConnection.CreateFile(this.defaultDBpath);
+            }
+            this.connDB = new SQLiteConnection(String.Format("Data Source={0};Version=3;", defaultDBpath));
+            this.connDB.Open();
+
+            // Check the TABLE exist already Create the table
+            string sql = "SELECT COUNT(*) cnt FROM sqlite_master WHERE name='member'";
+            SQLiteCommand command = new SQLiteCommand(sql, this.connDB);
+            SQLiteDataReader rdr = command.ExecuteReader();
+
+            try
+            {
+                sql = "SELECT * FROM member";
+                command = new SQLiteCommand(sql, this.connDB);
+                rdr = command.ExecuteReader();
+            }
+            catch
+            {
+                //string sql = "create table member (id int PRIMARY KEY, date int, task varchar(100), isFinished int)";
+                sql = "create table member (date int, task varchar(100), isFinished int)";
+                command = new SQLiteCommand(sql, this.connDB);
+                int result = command.ExecuteNonQuery();
+            }
+            rdr.Close();
+
+            sql = "SELECT * FROM member";
+            command = new SQLiteCommand(sql, this.connDB);
+            rdr = command.ExecuteReader();
+            while (rdr.Read())
+            {
+                _items.Insert(0, new WorkItem(rdr["date"].ToString(), rdr["task"].ToString(), Convert.ToBoolean(rdr["isFinished"])));
+                this.TotalTaskNumberLabel.Content = _items.Count;
+            }
+            rdr.Close();
+            
         }
 
         private void HandleEsc(object sender, KeyEventArgs e)
@@ -244,7 +278,15 @@ namespace TODO_list
         private void Image_MouseDown(object sender, MouseButtonEventArgs e)
         {
             // Add current remained item information to the DB
-            
+            foreach(WorkItem item in this._items)
+            {
+                int toDate = int.Parse("1215");
+                string sql = System.String.Format("INSERT INTO member (date, task, isFinished) VALUES ({0}, '{1}', {2})", toDate, item.task, item.isFinished);
+                SQLiteCommand cmd = new SQLiteCommand(sql, this.connDB);
+                cmd.ExecuteNonQuery();
+
+            }
+            this.connDB.Close();
 
             // Shut down the item
             Application.Current.Shutdown();
@@ -312,7 +354,10 @@ namespace TODO_list
             /* Add the item information to DB that it is finished
              * 
              */
-
+            int toDate = int.Parse("1215");
+            string sql = System.String.Format("INSERT INTO member (date, task, isFinished) VALUES ({0}, '{1}', {2})" , toDate, item.task, true);
+            SQLiteCommand cmd = new SQLiteCommand(sql, this.connDB);
+            cmd.ExecuteNonQuery();
             this.TotalTaskNumberLabel.Content = _items.Count;
         }
     }
