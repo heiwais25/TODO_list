@@ -13,22 +13,32 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Collections.ObjectModel;
-using System.Data.SQLite;
-
+using DataBase;
+using System.IO;
 
 namespace TODO_list
 {
     public class WorkItem
     {
+        public int rowId { get; set; }
+        public int fullDate { get; set; }
         public string date { get; set; }
         public string task { get; set; }
         public bool isFinished { get; set; }
 
-        public WorkItem(string date, string task, bool isFinished)
+        // fullDate : yyMMdd
+        public WorkItem(int fullDate, string task, bool isFinished, int rowId = 0)
         {
-            this.date = date;
+            this.fullDate = fullDate;
+            // Month
+            string month = Convert.ToString((int)((fullDate % 10000) / 100));
+            string date = Convert.ToString((int)((fullDate % 100)));
+            this.date = month + "-" + date;
             this.task = task;
             this.isFinished = isFinished;
+
+            // To distinguish each task
+            this.rowId = rowId;
         }
     }
 
@@ -40,8 +50,11 @@ namespace TODO_list
         private Point startPoint = new Point();
         private ObservableCollection<WorkItem> _items = new ObservableCollection<WorkItem>();
         private int startIndex = -1;
-        private SQLiteConnection connDB = null;
-        private string defaultDBpath = System.Environment.CurrentDirectory + "/db/record.sqlite";
+        private UserDB _db = null;
+        private string defaultDBDir = System.Environment.CurrentDirectory + "/db/";
+        private string defaultDBName = "record.sqlite";
+
+        
 
         public MainWindow()
         {
@@ -49,74 +62,14 @@ namespace TODO_list
 
             this.PreviewKeyDown += new KeyEventHandler(HandleEsc);
 
-            initializeListView();
-
-            // Initialize the DB
-            // Check already exist DB, otherwise create new DB
-            System.IO.FileInfo fi = new System.IO.FileInfo(this.defaultDBpath);
-            if (!fi.Exists)
-            {
-                SQLiteConnection.CreateFile(this.defaultDBpath);
-            }
-            this.connDB = new SQLiteConnection(String.Format("Data Source={0};Version=3;", defaultDBpath));
-            this.connDB.Open();
-
-            // Check the TABLE exist already Create the table
-            string sql = "SELECT COUNT(*) cnt FROM sqlite_master WHERE name='member'";
-            SQLiteCommand command = new SQLiteCommand(sql, this.connDB);
-            SQLiteDataReader rdr = command.ExecuteReader();
-
-            try
-            {
-                sql = "SELECT * FROM member";
-                command = new SQLiteCommand(sql, this.connDB);
-                rdr = command.ExecuteReader();
-            }
-            catch
-            {
-                //string sql = "create table member (id int PRIMARY KEY, date int, task varchar(100), isFinished int)";
-                sql = "create table member (date int, task varchar(100), isFinished int)";
-                command = new SQLiteCommand(sql, this.connDB);
-                int result = command.ExecuteNonQuery();
-            }
-            rdr.Close();
-
-            sql = "SELECT * FROM member";
-            command = new SQLiteCommand(sql, this.connDB);
-            rdr = command.ExecuteReader();
-            while (rdr.Read())
-            {
-                _items.Insert(0, new WorkItem(rdr["date"].ToString(), rdr["task"].ToString(), Convert.ToBoolean(rdr["isFinished"])));
-                this.TotalTaskNumberLabel.Content = _items.Count;
-            }
-            rdr.Close();
-            
+            InitializeDB();
+            InitializeListView();
         }
 
         private void HandleEsc(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
                 Close();
-        }
-
-        public void initializeListView()
-        {
-            // Clear the data
-            this.listView.Items.Clear();
-            _items.Clear();
-            this.listView.ItemsSource = _items;
-
-            // Bring the stored record from DB
-            /*
-             * 
-             *
-             */ 
-
-            // Set the today label
-            this.todayDate.Content = DateTime.Now.ToString("MM-dd");
-
-            // Set the top-side number label
-            this.TotalTaskNumberLabel.Content = _items.Count;
         }
 
         private void AddButton_MouseDown(object sender, MouseButtonEventArgs e)
@@ -131,7 +84,7 @@ namespace TODO_list
                 MessageBox.Show("You need to input what you will do", "Caution");
                 return;
             }
-            var nowDate = DateTime.Now.ToString("MM-dd");
+            int nowDate = Convert.ToInt32(DateTime.Now.ToString("yyMMdd"));
             _items.Insert(0, new WorkItem(nowDate, newTaskBox.Text, false));
             this.TotalTaskNumberLabel.Content = _items.Count;
 
@@ -139,6 +92,10 @@ namespace TODO_list
             this.newTaskBox.Clear();
         }
 
+
+        // =====================================================================================================
+        // ListView
+        // =====================================================================================================
         private void ListView_Drop(object sender, DragEventArgs e)
         {
             int index = -1;
@@ -225,37 +182,59 @@ namespace TODO_list
             }
         }
 
-        private void btnUp_Click(object sender, RoutedEventArgs e)
+        // =====================================================================================================
+        // removeButton
+        // =====================================================================================================
+        private void removeButton_Click(object sender, RoutedEventArgs e)
         {
-            WorkItem item = null;
-            int index = -1;
+            // Get the listViewItem which contains current button
+            ListViewItem listViewItem = FindAncestor<ListViewItem>((DependencyObject)e.OriginalSource);
+            WorkItem item = (WorkItem)listView.ItemContainerGenerator.ItemFromContainer(listViewItem);
 
-            if (this.listView.SelectedItems.Count != 1)
-            {
-                return;
-            }
-            item = (WorkItem)this.listView.SelectedItems[0];
-            index = _items.IndexOf(item);
-            if (index > 0)
-            {
-                _items.Move(index, index - 1);
-            }
+            // Remove the item from the container
+            _items.Remove(item);
+
+            // Decrease total number of tasks
+            this.TotalTaskNumberLabel.Content = _items.Count;
         }
 
-        private void btnDown_Click(object sender, RoutedEventArgs e)
+        // =====================================================================================================
+        // completeButton
+        // =====================================================================================================
+        private void completeButton_Click(object sender, RoutedEventArgs e)
         {
-            WorkItem item = null;
-            int index = -1;
+            // Get the listViewItem which contains current button
+            ListViewItem listViewItem = FindAncestor<ListViewItem>((DependencyObject)e.OriginalSource);
+            WorkItem item = (WorkItem)listView.ItemContainerGenerator.ItemFromContainer(listViewItem);
 
-            if (this.listView.SelectedItems.Count != 1) return;
-            item = (WorkItem)this.listView.SelectedItems[0];
-            index = _items.IndexOf(item);
-            if (index < _items.Count - 1)
+            // Remove the item from the container
+            _items.Remove(item);
+
+            string sql;
+            item.isFinished = true;
+            // In the case of it is new one
+            if (item.rowId == 0)
             {
-                _items.Move(index, index + 1);
+                // Add the item information to DB that it is finished
+                sql = System.String.Format(
+                    "INSERT INTO all_task (date, task, isFinished) VALUES ({0}, '{1}', {2})",
+                    item.fullDate, item.task, item.isFinished
+                );
             }
+            else
+            {
+                sql = System.String.Format(
+                    "UPDATE all_task SET isFinished={0} WHERE rowid={1}",
+                    item.isFinished, item.rowId
+                );
+            }
+            this._db.ExecuteReader(sql);
+
+            this.TotalTaskNumberLabel.Content = _items.Count;
         }
 
+
+        // Move Window
         private Point windowStartPoint;
         private void System_MouseMove(object sender, MouseEventArgs e)
         {
@@ -272,40 +251,14 @@ namespace TODO_list
                 }
                 DragMove();
             }
-
         }
 
-        private void Image_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            // Add current remained item information to the DB
-            foreach(WorkItem item in this._items)
-            {
-                int toDate = int.Parse("1215");
-                string sql = System.String.Format("INSERT INTO member (date, task, isFinished) VALUES ({0}, '{1}', {2})", toDate, item.task, item.isFinished);
-                SQLiteCommand cmd = new SQLiteCommand(sql, this.connDB);
-                cmd.ExecuteNonQuery();
-
-            }
-            this.connDB.Close();
-
-            // Shut down the item
-            Application.Current.Shutdown();
-        }
-
-        private void Image_MouseDown_1(object sender, MouseButtonEventArgs e)
+        // =====================================================================================================
+        // MinimizeButton
+        // =====================================================================================================
+        private void MinimizeButton_MouseDown(object sender, MouseButtonEventArgs e)
         {
             WindowState = WindowState.Minimized;
-        }
-
-
-        private void ExitButton_MouseEnter(object sender, MouseEventArgs e)
-        {
-            ExitButtonBorder.Background = new SolidColorBrush(Color.FromArgb(0xFF, 0xD6, 0xD6, 0xD6));
-        }
-
-        private void ExitButton_MouseLeave(object sender, MouseEventArgs e)
-        {
-            ExitButtonBorder.Background = Brushes.Transparent;
         }
 
         private void MinimizeButton_MouseEnter(object sender, MouseEventArgs e)
@@ -318,6 +271,57 @@ namespace TODO_list
             MinimizeButtonBorder.Background = Brushes.Transparent;
         }
 
+        // =====================================================================================================
+        // ExitButton
+        // =====================================================================================================
+        private void ExitButton_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            // Clear the unfinished_rowid table
+            string sql = "DELETE FROM unfinished_rowid";
+            int result = this._db.ExecuteNonQuery(sql);
+
+            // Add current remained item information to the DB
+            foreach (WorkItem item in this._items.Reverse<WorkItem>())
+            {
+                int currentId = item.rowId;
+                if (currentId == 0)
+                {
+                    sql = System.String.Format(
+                    "INSERT INTO all_task (date, task, isFinished) VALUES ({0}, '{1}', {2})",
+                    item.fullDate, item.task, item.isFinished
+                    );
+                    this._db.ExecuteNonQuery(sql);
+
+                    // Get the last input row id
+                    sql = "SELECT IFNULL(MAX(rowid), 1) AS Id FROM all_task";
+                    currentId = Convert.ToInt32(this._db.ExecuteScalar(sql));
+                }
+                
+                // 현재 순서에 맞춰서 저장
+                sql = System.String.Format(
+                    "INSERT INTO unfinished_rowid (id) VALUES ({0})", currentId
+                );
+                this._db.ExecuteNonQuery(sql);
+            }
+            this._db.Close();
+
+            // Shut down the item
+            Application.Current.Shutdown();
+        }
+
+        private void ExitButton_MouseEnter(object sender, MouseEventArgs e)
+        {
+            ExitButtonBorder.Background = new SolidColorBrush(Color.FromArgb(0xFF, 0xD6, 0xD6, 0xD6));
+        }
+
+        private void ExitButton_MouseLeave(object sender, MouseEventArgs e)
+        {
+            ExitButtonBorder.Background = Brushes.Transparent;
+        }
+
+        // =====================================================================================================
+        // NewTaskBox
+        // =====================================================================================================
         private void NewTaskBox_KeyDown(object sender, KeyEventArgs e)
         {
             if(e.Key == Key.Enter)
@@ -329,36 +333,108 @@ namespace TODO_list
             }
         }
 
-        private void removeButton_Click(object sender, RoutedEventArgs e)
+        
+
+        // ==================================================================================
+        // Initialization
+        // ==================================================================================
+        private void InitializeDB()
         {
-            // Get the listViewItem which contains current button
-            ListViewItem listViewItem = FindAncestor<ListViewItem>((DependencyObject)e.OriginalSource);
-            WorkItem item = (WorkItem)listView.ItemContainerGenerator.ItemFromContainer(listViewItem);
+            UserDBReader rdr = null;
+            string defaultDBFullPath = this.defaultDBDir + this.defaultDBName;
+            string sql;
+            ref UserDB db = ref this._db;
 
-            // Remove the item from the container
-            _items.Remove(item);
+            // Prepare the directory
+            DirectoryInfo di = new DirectoryInfo(this.defaultDBDir);
+            if (!di.Exists)
+            {
+                di.Create();
+            }
 
-            // Decrease total number of tasks
+            // Check already exist DB, otherwise create new DB
+            db = new UserDB(defaultDBFullPath);
+            FileInfo fi = new System.IO.FileInfo(defaultDBFullPath);
+            if (!fi.Exists)
+            {
+                db.Create();
+            }
+            db.Connect();
+
+            // Check the all_task TABLE exist already Create the table
+            try
+            {
+                sql = "SELECT * FROM all_task";
+                rdr = db.ExecuteReader(sql);
+            }
+            catch
+            {
+                sql = "create table all_task (date int, task varchar(100), isFinished int)";
+                int result = db.ExecuteNonQuery(sql);
+            }
+            if (rdr != null)
+            {
+                rdr.Close();
+            }
+
+            // Check the unfinished_task TABLE exist already Create the table
+            try
+            {
+                sql = "SELECT * FROM unfinished_rowid";
+                rdr = db.ExecuteReader(sql);
+            }
+            catch
+            {
+                sql = "create table unfinished_rowid (id int)";
+                int result = db.ExecuteNonQuery(sql);
+            }
+            if (rdr != null)
+            {
+                rdr.Close();
+            }
+
+        }
+
+        public void InitializeListView()
+        {
+            // Clear the data
+            this.listView.Items.Clear();
+            _items.Clear();
+            this.listView.ItemsSource = _items;
+
+            // Bring the stored record from DB
+            // Need to be changed
+            //string sql = "SELECT rowid, * FROM all_task WHERE isFinished=0";
+            string sql = "SELECT * FROM unfinished_rowid";
+            UserDBReader rowIdRdr = this._db.ExecuteReader(sql);
+            while (rowIdRdr.Read())
+            {
+                int currentId = Convert.ToInt32(rowIdRdr.Get("id"));
+                sql = String.Format("SELECT rowid, * FROM all_task WHERE rowid={0}", currentId);
+                UserDBReader rdr = this._db.ExecuteReader(sql);
+                while (rdr.Read())
+                {
+                    _items.Insert(0, new WorkItem(
+                    Convert.ToInt32(rdr.Get("date")),
+                    Convert.ToString(rdr.Get("task")),
+                    Convert.ToBoolean(rdr.Get("isFinished")),
+                    Convert.ToInt32(rdr.Get("rowid"))
+                ));
+                }
+                rdr.Close();    
+            }
+            this.TotalTaskNumberLabel.Content = _items.Count;
+            rowIdRdr.Close();
+
+            
+
+            // Set the today label
+            this.todayDate.Content = DateTime.Now.ToString("MM-dd");
+
+            // Set the top-side number label
             this.TotalTaskNumberLabel.Content = _items.Count;
         }
 
-        private void completeButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Get the listViewItem which contains current button
-            ListViewItem listViewItem = FindAncestor<ListViewItem>((DependencyObject)e.OriginalSource);
-            WorkItem item = (WorkItem)listView.ItemContainerGenerator.ItemFromContainer(listViewItem);
-
-            // Remove the item from the container
-            _items.Remove(item);
-
-            /* Add the item information to DB that it is finished
-             * 
-             */
-            int toDate = int.Parse("1215");
-            string sql = System.String.Format("INSERT INTO member (date, task, isFinished) VALUES ({0}, '{1}', {2})" , toDate, item.task, true);
-            SQLiteCommand cmd = new SQLiteCommand(sql, this.connDB);
-            cmd.ExecuteNonQuery();
-            this.TotalTaskNumberLabel.Content = _items.Count;
-        }
+        
     }
 }

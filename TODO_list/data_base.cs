@@ -7,61 +7,77 @@ using System.Data.SQLite;
 using System.IO;
 
 
-namespace TODO_list
+namespace DataBase
 {
-    public class DB
+    public class UserDBReader
     {
-        private string _defaultDBpath = System.Environment.CurrentDirectory + "/db/record.sqlite";
-        private SQLiteConnection connDB = null;
-        private SQLiteCommand command = null;
-        private SQLiteDataReader rdr = null;
-
-        public void connectToDB(string dbPath = "")
+        private SQLiteDataReader _rdr = null;
+        public UserDBReader(SQLiteDataReader rdr)
         {
-            // 경로 확인
-            if(dbPath == String.Empty)
-            {
-                dbPath = this._defaultDBpath;
-            }
+            this._rdr = rdr;
+        }
 
-            // 기존의 폴더가 없다면 폴더 생성
-            string dirPath = dbPath.Substring(0, dbPath.LastIndexOf('/'));
-            DirectoryInfo di = new DirectoryInfo(dirPath);
-            if (!di.Exists)
-            {
-                di.Create();
-            }
+        public bool Read()
+        {
+            return this._rdr.Read();
+        }
 
-            // 기존 DB가 없다면 생성
-            System.IO.FileInfo fi = new System.IO.FileInfo(dbPath);
-            if (!fi.Exists)
-            {
-                SQLiteConnection.CreateFile(dbPath);
-            }
+        public object Get(string key)
+        {
+            return this._rdr[key];
+        }
 
+        public void Close()
+        {
+            this._rdr.Close();
+        }
+    }
+
+    public class UserDB
+    {
+        string _dbFullPath = System.Environment.CurrentDirectory;
+        private SQLiteConnection _connDB = null;
+
+        public UserDB(string dbFullPath)
+        {
+            this._dbFullPath = dbFullPath;
+        }
+
+        public void Close()
+        {
+            this._connDB.Close();
+        }
+
+        public void Create()
+        {
+            SQLiteConnection.CreateFile(_dbFullPath);
+        }
+
+        public void Connect()
+        {
             // DB에 연결
-            this.connDB = new SQLiteConnection(String.Format("Data Source={0};Version=3;", dbPath));
-            this.connDB.Open();
+            this._connDB = new SQLiteConnection(String.Format("Data Source={0};Version=3;", this._dbFullPath));
+            this._connDB.Open();
         }
 
-        public void execute(string sql)
+        public int ExecuteNonQuery(string sql)
         {
-            command = new SQLiteCommand(sql, this.connDB);
-            this.rdr = command.ExecuteReader();
+            SQLiteCommand command = new SQLiteCommand(sql, this._connDB);
+            return command.ExecuteNonQuery();
         }
 
-        public void readOutput()
+        public UserDBReader ExecuteReader(string sql)
         {
-            this.rdr.Read();
+            SQLiteCommand command = new SQLiteCommand(sql, this._connDB);
+            SQLiteDataReader rdr = command.ExecuteReader();
+            UserDBReader dbReader = new UserDBReader(rdr);
+            return dbReader;
         }
 
-
-
-        public int executeNonQuery(string sql)
+        public long ExecuteScalar(string sql)
         {
-            this.command = new SQLiteCommand(sql, this.connDB);
-            int result = command.ExecuteNonQuery();
-            return result;
+            SQLiteCommand command = new SQLiteCommand(sql, this._connDB);
+            return (long)command.ExecuteScalar();
         }
     }
 }

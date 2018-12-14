@@ -36,10 +36,10 @@
                     </Grid>
                     <Label Content="TODO List" Height="28" VerticalAlignment="Top" Width="376" FontFamily="Consolas"/>
                     <Border x:Name="MinimizeButtonBorder">
-                        <Image x:Name="MinimizeButton" Source="resource/minus_icon.png" HorizontalAlignment="Left" Height="28" Width="25" RenderTransformOrigin="15.515,0.571" Stretch="Fill" StretchDirection="DownOnly" VerticalAlignment="Bottom" MouseDown="Image_MouseDown_1" Opacity="0.995" MouseEnter="MinimizeButton_MouseEnter" MouseLeave="MinimizeButton_MouseLeave"/>
+                        <Image x:Name="MinimizeButton" Source="resource/minus_icon.png" HorizontalAlignment="Left" Height="28" Width="25" RenderTransformOrigin="15.515,0.571" Stretch="Fill" StretchDirection="DownOnly" VerticalAlignment="Bottom" MouseDown="MinimizeButton_MouseDown" Opacity="0.995" MouseEnter="MinimizeButton_MouseEnter" MouseLeave="MinimizeButton_MouseLeave"/>
                     </Border>
                     <Border x:Name="ExitButtonBorder">
-                        <Image x:Name="ExitButton" Source="resource/exit_icon_4.png" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="25" RenderTransformOrigin="15.515,0.571" MouseDown="Image_MouseDown" MouseEnter="ExitButton_MouseEnter" MouseLeave="ExitButton_MouseLeave"/>
+                        <Image x:Name="ExitButton" Source="resource/exit_icon_4.png" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="25" RenderTransformOrigin="15.515,0.571" MouseDown="ExitButton_MouseDown" MouseEnter="ExitButton_MouseEnter" MouseLeave="ExitButton_MouseLeave"/>
                     </Border>
                 </DockPanel>
             </Border>
