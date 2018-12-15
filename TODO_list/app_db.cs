@@ -15,8 +15,15 @@ namespace TODO_list
 
         public void InitializeDB(string dbFullPath)
         {
-            UserDBReader rdr = null;
-            string sql;
+            CreateDB(dbFullPath);
+            CreateTable("all_task");
+            CreateTable("unfinished_task_rowid");
+            CreateTable("all_task_row_count");
+            CreateTable("unfinished_task_row_count");
+        }
+
+        private void CreateDB(string dbFullPath)
+        {
             ref UserDB db = ref this._db;
 
             // Prepare the directory (Recursive하게 만들수도 있긴 할듯)
@@ -34,38 +41,76 @@ namespace TODO_list
                 db.Create();
             }
             db.Connect();
+        }
 
-            // Check the all_task TABLE exist already Create the table
+        private string GetCreateTableSQL(string mode)
+        {
+            string sql = "";
+            if (mode == "all_task")
+            {
+                sql = String.Format("create table {0} (date int, task varchar(100), isFinished int)", mode);
+            }
+            else if(mode == "unfinished_task_rowid")
+            {
+                sql = String.Format("create table {0} (id int)", mode);
+            }
+            else if(mode == "all_task_row_count" || mode == "unfinished_task_row_count")
+            {
+                sql = String.Format("CREATE TABLE {0} (count int);", mode);
+            }
+            return sql;
+        }
+
+        private void CreateTable(string mode)
+        {
+            string sql;
+            ref UserDB db = ref this._db;
+            UserDBReader rdr = null;
+
             try
             {
-                sql = "SELECT * FROM all_task";
+                sql = String.Format("SELECT * FROM {0}", mode);
                 rdr = db.ExecuteReader(sql);
+                if (rdr != null)
+                {
+                    rdr.Close();
+                }
             }
             catch
             {
-                sql = "create table all_task (date int, task varchar(100), isFinished int)";
+                sql = GetCreateTableSQL(mode);
                 int result = db.ExecuteNonQuery(sql);
-            }
-            if (rdr != null)
-            {
-                rdr.Close();
-            }
 
-            // Check the unfinished_task TABLE exist already Create the table
-            try
-            {
-                sql = "SELECT * FROM unfinished_rowid";
-                rdr = db.ExecuteReader(sql);
+                if(mode == "all_task_row_count" || mode == "unfinished_task_row_count")
+                {
+                    sql = String.Format("INSERT INTO {0} (count) VALUES (0);", mode);
+                    result = db.ExecuteNonQuery(sql);
+                }
             }
-            catch
-            {
-                sql = "create table unfinished_rowid (id int)";
-                int result = db.ExecuteNonQuery(sql);
-            }
-            if (rdr != null)
-            {
-                rdr.Close();
-            }
+        }
+
+        public int GetTableCurrentRowCount(string mode)
+        {
+            // Get the last input row id
+            string sql = String.Format("SELECT * FROM {0} WHERE rowid=1;", mode);
+            UserDBReader rdr = this._db.ExecuteReader(sql);
+            rdr.Read();
+            int ret = Convert.ToInt32(rdr.Get("count"));
+            rdr.Close();
+            return ret;
+        }
+
+        private void IncreaseTableCurrentRowCount(string mode)
+        {
+            int currentCount = GetTableCurrentRowCount(mode);
+            string sql = String.Format("UPDATE {0} SET count={1} WHERE rowid = 1;", mode, currentCount + 1);
+            this._db.ExecuteReader(sql);
+        }
+
+        private void InitializeTableCurrentRowCount(string mode)
+        {
+            string sql = String.Format("UPDATE {0} SET count={1} WHERE rowid = 1;", mode, 0);
+            this._db.ExecuteReader(sql);
         }
 
         public void UpdateFinishedTask(WorkItem item)
@@ -75,9 +120,11 @@ namespace TODO_list
             // In the case of it is new one
             if (item.rowId == 0)
             {
+                IncreaseTableCurrentRowCount("all_task_row_count");
+
                 // Add the item information to DB that it is finished
                 sql = System.String.Format(
-                    "INSERT INTO all_task (date, task, isFinished) VALUES ({0}, '{1}', {2})",
+                    "INSERT INTO all_task (date, task, isFinished) VALUES ({0}, '{1}', {2});", 
                     item.fullDate, item.task, item.isFinished
                 );
             }
@@ -97,7 +144,7 @@ namespace TODO_list
             ObservableCollection<WorkItem> items = new ObservableCollection<WorkItem>();
 
             // Bring the stored record from DB
-            string sql = "SELECT * FROM unfinished_rowid";
+            string sql = "SELECT * FROM unfinished_task_rowid";
             UserDBReader rowIdRdr = this._db.ExecuteReader(sql);
             while (rowIdRdr.Read())
             {
@@ -120,10 +167,11 @@ namespace TODO_list
 
         public void ClearUnfinishedTaskTable()
         {
-            string sql = "DELETE FROM unfinished_rowid";
+            string sql = "DELETE FROM unfinished_task_rowid";
             int result = this._db.ExecuteNonQuery(sql);
-        }
 
+            InitializeTableCurrentRowCount("unfinished_task_row_count");
+        }
 
         public void SaveUnfinishedTask(ObservableCollection<WorkItem> items)
         {
@@ -134,6 +182,8 @@ namespace TODO_list
                 int currentId = item.rowId;
                 if (currentId == 0)
                 {
+                    IncreaseTableCurrentRowCount("all_task_row_count");
+
                     sql = System.String.Format(
                         "INSERT INTO all_task (date, task, isFinished) VALUES ({0}, '{1}', {2})",
                         item.fullDate, item.task, item.isFinished
@@ -143,10 +193,13 @@ namespace TODO_list
                     currentId = GetAllTaskCount();
                 }
 
+                IncreaseTableCurrentRowCount("unfinished_task_row_count");
+
                 // 현재 순서에 맞춰서 저장
                 sql = System.String.Format(
-                    "INSERT INTO unfinished_rowid (id) VALUES ({0})", currentId
+                    "INSERT INTO unfinished_task_rowid (id) VALUES ({0})", currentId
                 );
+
                 this._db.ExecuteNonQuery(sql);
             }
         }
@@ -154,7 +207,7 @@ namespace TODO_list
         public int GetAllTaskCount()
         {
             // Get the last input row id
-            string sql = "SELECT IFNULL(MAX(rowid), 1) AS Id FROM all_task";
+            string sql = "SELECT IFNULL(MAX(rowid), 1) AS Id FROM all_task;";
             int count = Convert.ToInt32(this._db.ExecuteScalar(sql));
             return count;
         }

@@ -43,7 +43,9 @@ namespace TODO_list
         private void HandleEsc(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
+            {
                 ShutDownProcess();
+            }
         }
 
         private void AddButton_MouseDown(object sender, MouseButtonEventArgs e)
@@ -51,19 +53,31 @@ namespace TODO_list
             this.AddItem();
         }
 
+        private bool IsNewTaskBoxEmpty()
+        {
+            string currentText = this.newTaskBox.Text;
+            currentText = currentText.Replace(" ", "");
+            currentText = currentText.Replace("\r\n", "");
+            return String.IsNullOrEmpty(currentText);
+        }
+
+        private int GetTodayDate()
+        {
+            int todayDate = Convert.ToInt32(DateTime.Now.ToString("yyMMdd"));
+            return todayDate;
+        }
+
+
         private void AddItem()
         {
-            // 비어있는지 확인
-            if (String.IsNullOrEmpty(newTaskBox.Text))
+            if (IsNewTaskBoxEmpty())
             {
                 MessageBox.Show("You need to input what you will do", "Caution");
                 return;
             }
-            int nowDate = Convert.ToInt32(DateTime.Now.ToString("yyMMdd"));
-            _items.Insert(0, new WorkItem(nowDate, newTaskBox.Text, false));
 
+            _items.Insert(0, new WorkItem(GetTodayDate(), newTaskBox.Text, false));
             this.TotalTaskNumberLabel.Content = _items.Count;
-            // Clean the text box
             this.newTaskBox.Clear();
         }
 
@@ -82,7 +96,6 @@ namespace TODO_list
                 ListViewItem listViewItem = FindAncestor<ListViewItem>((DependencyObject)e.OriginalSource);
                 if(listViewItem == null)
                 {
-                    // abort
                     e.Effects = DragDropEffects.None;
                     return;
                 }
@@ -190,20 +203,10 @@ namespace TODO_list
 
 
         // Move Window
-        private Point windowStartPoint;
         private void System_MouseMove(object sender, MouseEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed)
             {
-                if (this.WindowState == WindowState.Maximized && Math.Abs(windowStartPoint.Y - e.GetPosition(null).Y) > 2)
-                {
-                    var point = PointToScreen(e.GetPosition(null));
-
-                    this.WindowState = WindowState.Normal;
-
-                    this.Left = point.X - this.ActualWidth / 2;
-                    //this.Top = point.Y - border.ActualHeight / 2;
-                }
                 DragMove();
             }
         }
@@ -278,10 +281,8 @@ namespace TODO_list
             _items = this._appDB.GetUnfinishedTask();
             this.listView.ItemsSource = _items;
             
-
             // Set the today label
             this.todayDate.Content = DateTime.Now.ToString("MM-dd");
-
 
             // Set the top-side number label
             InitializeStatusLabel();
