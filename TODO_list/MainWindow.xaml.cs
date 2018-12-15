@@ -18,43 +18,15 @@ using System.IO;
 
 namespace TODO_list
 {
-    public class WorkItem
-    {
-        public int rowId { get; set; }
-        public int fullDate { get; set; }
-        public string date { get; set; }
-        public string task { get; set; }
-        public bool isFinished { get; set; }
-
-        // fullDate : yyMMdd
-        public WorkItem(int fullDate, string task, bool isFinished, int rowId = 0)
-        {
-            this.fullDate = fullDate;
-            // Month
-            string month = Convert.ToString((int)((fullDate % 10000) / 100));
-            string date = Convert.ToString((int)((fullDate % 100)));
-            this.date = month + "-" + date;
-            this.task = task;
-            this.isFinished = isFinished;
-
-            // To distinguish each task
-            this.rowId = rowId;
-        }
-    }
-
-    /// <summary>
-    /// MainWindow.xaml에 대한 상호 작용 논리
-    /// </summary>
     public partial class MainWindow : Window
     {
         private Point startPoint = new Point();
         private ObservableCollection<WorkItem> _items = new ObservableCollection<WorkItem>();
         private int startIndex = -1;
-        private UserDB _db = null;
+        private int _totalTaskCount = 0;
         private string defaultDBDir = System.Environment.CurrentDirectory + "/db/";
         private string defaultDBName = "record.sqlite";
-
-        
+        private ApplicationDB _appDB = null;
 
         public MainWindow()
         {
@@ -62,14 +34,16 @@ namespace TODO_list
 
             this.PreviewKeyDown += new KeyEventHandler(HandleEsc);
 
-            InitializeDB();
+            this._appDB = new ApplicationDB();
+            this._appDB.InitializeDB(this.defaultDBDir + this.defaultDBName);
+
             InitializeListView();
         }
 
         private void HandleEsc(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
-                Close();
+                ShutDownProcess();
         }
 
         private void AddButton_MouseDown(object sender, MouseButtonEventArgs e)
@@ -79,6 +53,7 @@ namespace TODO_list
 
         private void AddItem()
         {
+            // 비어있는지 확인
             if (String.IsNullOrEmpty(newTaskBox.Text))
             {
                 MessageBox.Show("You need to input what you will do", "Caution");
@@ -86,8 +61,8 @@ namespace TODO_list
             }
             int nowDate = Convert.ToInt32(DateTime.Now.ToString("yyMMdd"));
             _items.Insert(0, new WorkItem(nowDate, newTaskBox.Text, false));
-            this.TotalTaskNumberLabel.Content = _items.Count;
 
+            this.TotalTaskNumberLabel.Content = _items.Count;
             // Clean the text box
             this.newTaskBox.Clear();
         }
@@ -116,7 +91,6 @@ namespace TODO_list
                 WorkItem item = (WorkItem)listView.ItemContainerGenerator.ItemFromContainer(listViewItem);
 
                 // Move item into observable collection
-                // (this will be automatically reflected to listView.ItemSource
                 e.Effects = DragDropEffects.Move;
                 index = _items.IndexOf(item);
                 if (startIndex >= 0 && index >= 0)
@@ -210,26 +184,7 @@ namespace TODO_list
             // Remove the item from the container
             _items.Remove(item);
 
-            string sql;
-            item.isFinished = true;
-            // In the case of it is new one
-            if (item.rowId == 0)
-            {
-                // Add the item information to DB that it is finished
-                sql = System.String.Format(
-                    "INSERT INTO all_task (date, task, isFinished) VALUES ({0}, '{1}', {2})",
-                    item.fullDate, item.task, item.isFinished
-                );
-            }
-            else
-            {
-                sql = System.String.Format(
-                    "UPDATE all_task SET isFinished={0} WHERE rowid={1}",
-                    item.isFinished, item.rowId
-                );
-            }
-            this._db.ExecuteReader(sql);
-
+            this._appDB.UpdateFinishedTask(item);
             this.TotalTaskNumberLabel.Content = _items.Count;
         }
 
@@ -276,38 +231,20 @@ namespace TODO_list
         // =====================================================================================================
         private void ExitButton_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            // Clear the unfinished_rowid table
-            string sql = "DELETE FROM unfinished_rowid";
-            int result = this._db.ExecuteNonQuery(sql);
+            ShutDownProcess();
+        }
 
-            // Add current remained item information to the DB
-            foreach (WorkItem item in this._items.Reverse<WorkItem>())
-            {
-                int currentId = item.rowId;
-                if (currentId == 0)
-                {
-                    sql = System.String.Format(
-                    "INSERT INTO all_task (date, task, isFinished) VALUES ({0}, '{1}', {2})",
-                    item.fullDate, item.task, item.isFinished
-                    );
-                    this._db.ExecuteNonQuery(sql);
-
-                    // Get the last input row id
-                    sql = "SELECT IFNULL(MAX(rowid), 1) AS Id FROM all_task";
-                    currentId = Convert.ToInt32(this._db.ExecuteScalar(sql));
-                }
-                
-                // 현재 순서에 맞춰서 저장
-                sql = System.String.Format(
-                    "INSERT INTO unfinished_rowid (id) VALUES ({0})", currentId
-                );
-                this._db.ExecuteNonQuery(sql);
-            }
-            this._db.Close();
+        private void ShutDownProcess()
+        {
+            // ShutdownWithSaveRecords
+            this._appDB.ClearUnfinishedTaskTable();
+            this._appDB.SaveUnfinishedTask(this._items);
+            this._appDB.CloseDB();
 
             // Shut down the item
             Application.Current.Shutdown();
         }
+
 
         private void ExitButton_MouseEnter(object sender, MouseEventArgs e)
         {
@@ -333,108 +270,31 @@ namespace TODO_list
             }
         }
 
-        
-
-        // ==================================================================================
-        // Initialization
-        // ==================================================================================
-        private void InitializeDB()
-        {
-            UserDBReader rdr = null;
-            string defaultDBFullPath = this.defaultDBDir + this.defaultDBName;
-            string sql;
-            ref UserDB db = ref this._db;
-
-            // Prepare the directory
-            DirectoryInfo di = new DirectoryInfo(this.defaultDBDir);
-            if (!di.Exists)
-            {
-                di.Create();
-            }
-
-            // Check already exist DB, otherwise create new DB
-            db = new UserDB(defaultDBFullPath);
-            FileInfo fi = new System.IO.FileInfo(defaultDBFullPath);
-            if (!fi.Exists)
-            {
-                db.Create();
-            }
-            db.Connect();
-
-            // Check the all_task TABLE exist already Create the table
-            try
-            {
-                sql = "SELECT * FROM all_task";
-                rdr = db.ExecuteReader(sql);
-            }
-            catch
-            {
-                sql = "create table all_task (date int, task varchar(100), isFinished int)";
-                int result = db.ExecuteNonQuery(sql);
-            }
-            if (rdr != null)
-            {
-                rdr.Close();
-            }
-
-            // Check the unfinished_task TABLE exist already Create the table
-            try
-            {
-                sql = "SELECT * FROM unfinished_rowid";
-                rdr = db.ExecuteReader(sql);
-            }
-            catch
-            {
-                sql = "create table unfinished_rowid (id int)";
-                int result = db.ExecuteNonQuery(sql);
-            }
-            if (rdr != null)
-            {
-                rdr.Close();
-            }
-
-        }
-
         public void InitializeListView()
         {
             // Clear the data
             this.listView.Items.Clear();
-            _items.Clear();
+
+            _items = this._appDB.GetUnfinishedTask();
             this.listView.ItemsSource = _items;
-
-            // Bring the stored record from DB
-            // Need to be changed
-            //string sql = "SELECT rowid, * FROM all_task WHERE isFinished=0";
-            string sql = "SELECT * FROM unfinished_rowid";
-            UserDBReader rowIdRdr = this._db.ExecuteReader(sql);
-            while (rowIdRdr.Read())
-            {
-                int currentId = Convert.ToInt32(rowIdRdr.Get("id"));
-                sql = String.Format("SELECT rowid, * FROM all_task WHERE rowid={0}", currentId);
-                UserDBReader rdr = this._db.ExecuteReader(sql);
-                while (rdr.Read())
-                {
-                    _items.Insert(0, new WorkItem(
-                    Convert.ToInt32(rdr.Get("date")),
-                    Convert.ToString(rdr.Get("task")),
-                    Convert.ToBoolean(rdr.Get("isFinished")),
-                    Convert.ToInt32(rdr.Get("rowid"))
-                ));
-                }
-                rdr.Close();    
-            }
-            this.TotalTaskNumberLabel.Content = _items.Count;
-            rowIdRdr.Close();
-
             
 
             // Set the today label
             this.todayDate.Content = DateTime.Now.ToString("MM-dd");
 
+
             // Set the top-side number label
-            this.TotalTaskNumberLabel.Content = _items.Count;
+            InitializeStatusLabel();
         }
 
-        
+        private void InitializeStatusLabel()
+        {
+            int todoTaskNumber = _items.Count;
+            this._totalTaskCount = this._appDB.GetAllTaskCount();
+            this.TotalTaskNumberLabel.Content = this._totalTaskCount;
+            this.DoneTaskNumberLabel.Content = this._totalTaskCount - todoTaskNumber;
+            this.TodoTaskNumberLabel.Content = todoTaskNumber;
+        }
+
     }
 }
