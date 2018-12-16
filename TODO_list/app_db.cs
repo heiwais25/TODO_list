@@ -107,6 +107,17 @@ namespace TODO_list
             this._db.ExecuteReader(sql);
         }
 
+        private void DecreaseTableCurrentRowCount(string mode)
+        {
+            int currentCount = GetTableCurrentRowCount(mode);
+            if (currentCount == 0)
+            {
+                throw new Exception(String.Format("Currently, there are no row in the {0}", mode));
+            }
+            string sql = String.Format("UPDATE {0} SET count={1} WHERE rowid = 1;", mode, currentCount - 1);
+            this._db.ExecuteReader(sql);
+        }
+
         private void InitializeTableCurrentRowCount(string mode)
         {
             string sql = String.Format("UPDATE {0} SET count={1} WHERE rowid = 1;", mode, 0);
@@ -202,6 +213,25 @@ namespace TODO_list
 
                 this._db.ExecuteNonQuery(sql);
             }
+        }
+
+        public void RemoveUnfinishedTask(WorkItem item)
+        {
+            if (item.rowId == 0)
+            {
+                return;
+            }
+
+            string sql;
+            item.isFinished = true;
+
+            // In the case of it is new one
+            sql = System.String.Format(
+                "DELETE FROM all_task WHERE rowid={0};", item.rowId
+            );
+            this._db.ExecuteReader(sql);
+
+            DecreaseTableCurrentRowCount("all_task_row_count");
         }
 
         public int GetAllTaskCount()

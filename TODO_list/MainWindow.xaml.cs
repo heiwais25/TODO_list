@@ -23,7 +23,6 @@ namespace TODO_list
         private Point startPoint = new Point();
         private ObservableCollection<WorkItem> _items = new ObservableCollection<WorkItem>();
         private int startIndex = -1;
-        private int _totalTaskCount = 0;
         private string defaultDBDir = System.Environment.CurrentDirectory + "/db/";
         private string defaultDBName = "record.sqlite";
         private ApplicationDB _appDB = null;
@@ -58,6 +57,7 @@ namespace TODO_list
             string currentText = this.newTaskBox.Text;
             currentText = currentText.Replace(" ", "");
             currentText = currentText.Replace("\r\n", "");
+
             return String.IsNullOrEmpty(currentText);
         }
 
@@ -79,6 +79,8 @@ namespace TODO_list
             _items.Insert(0, new WorkItem(GetTodayDate(), newTaskBox.Text, false));
             this.TotalTaskNumberLabel.Content = _items.Count;
             this.newTaskBox.Clear();
+
+            UpdateStatusLabel("add");
         }
 
 
@@ -182,7 +184,10 @@ namespace TODO_list
             _items.Remove(item);
 
             // Decrease total number of tasks
+            this._appDB.RemoveUnfinishedTask(item);
             this.TotalTaskNumberLabel.Content = _items.Count;
+
+            UpdateStatusLabel("remove");
         }
 
         // =====================================================================================================
@@ -198,7 +203,8 @@ namespace TODO_list
             _items.Remove(item);
 
             this._appDB.UpdateFinishedTask(item);
-            this.TotalTaskNumberLabel.Content = _items.Count;
+
+            UpdateStatusLabel("complete");
         }
 
 
@@ -288,13 +294,30 @@ namespace TODO_list
             InitializeStatusLabel();
         }
 
+        private void UpdateStatusLabel(string mode)
+        {
+            int todoTaskNumber = this._items.Count;
+            int doneTaskNumber = Convert.ToInt32(this.DoneTaskNumberLabel.Content);
+            this.TodoTaskNumberLabel.Content = todoTaskNumber;
+            if(mode == "add" || mode =="remove")
+            {
+                this.TotalTaskNumberLabel.Content = todoTaskNumber + doneTaskNumber;
+            }
+            else if(mode == "complete")
+            {
+                this.DoneTaskNumberLabel.Content = doneTaskNumber + 1;
+            }
+        }
+
+
         private void InitializeStatusLabel()
         {
-            int todoTaskNumber = _items.Count;
-            this._totalTaskCount = this._appDB.GetAllTaskCount();
-            this.TotalTaskNumberLabel.Content = this._totalTaskCount;
-            this.DoneTaskNumberLabel.Content = this._totalTaskCount - todoTaskNumber;
+            int todoTaskNumber = this._appDB.GetTableCurrentRowCount("unfinished_task_row_count");
+            int totalTaskCount = this._appDB.GetTableCurrentRowCount("all_task_row_count");
+
+            this.TotalTaskNumberLabel.Content = totalTaskCount;
             this.TodoTaskNumberLabel.Content = todoTaskNumber;
+            this.DoneTaskNumberLabel.Content = totalTaskCount - todoTaskNumber;
         }
 
     }
