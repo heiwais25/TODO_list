@@ -94,6 +94,36 @@ namespace DataBase
             return dataTable;
         }
 
+
+        public void ExecuteTransaction(List<String> sqlList)
+        {
+            using(var connDB = new SQLiteConnection(this._dbConnectionStatement))
+            {
+                connDB.Open();
+                using(var command = new SQLiteCommand(connDB))
+                {
+                    using(var transaction = connDB.BeginTransaction())
+                    {
+                        try
+                        {
+                            foreach (String sql in sqlList)
+                            {
+                                command.CommandText = sql;
+                                command.ExecuteNonQuery();
+                            }
+                            transaction.Commit();
+                        }
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+                            throw ex;
+                        }
+                    }
+                }
+            }
+        }
+
+
         public long ExecuteScalar(string sql)
         {
             long ret = 0;

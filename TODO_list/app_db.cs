@@ -154,32 +154,54 @@ namespace TODO_list
             return items;
         }
 
-
+        
         public void SaveUnfinishedTask(ObservableCollection<WorkItem> items)
         {
             string sql;
+            List<string> sqlList = new List<string>();
+            List<int> newTaskRowID = new List<int>();
+            int newTaskCount = 0;
+
+            int lastInputRowID = GetAllTaskCount();
+            int lastAllTaskNumber = GetTableCurrentRowCount(TableMode.AllTaskRowCount);
+
             // Add current remained item information to the DB
             foreach (WorkItem item in items.Reverse<WorkItem>())
             {
-                int currentId = item.rowId;
-                if (currentId == 0)
+                int currentID = item.rowId;
+                if (currentID == 0)
                 {
-                    IncreaseTableCurrentRowCount(TableMode.AllTaskRowCount);
-
+                    // 처음 들어온 item에 대해서만 sql 진행
+                    // 1. Insert문 -> all_task 
                     sql = System.String.Format(
                         "INSERT INTO all_task (date, task, isFinished) VALUES ({0}, '{1}', {2})",
                         item.fullDate, item.task, item.isFinished
                     );
-                    this._db.ExecuteNonQuery(sql);
-                    currentId = GetAllTaskCount();
+                    currentID = ++lastInputRowID;
+                    sqlList.Add(sql);
+                    newTaskCount++;
                 }
 
-                IncreaseTableCurrentRowCount(TableMode.UnfinishedTaskRowCount);
+                // 2. Insert문 -> unfinished_task_rowid
                 sql = System.String.Format(
-                    "INSERT INTO unfinished_task_rowid (id) VALUES ({0})", currentId
+                    "INSERT INTO unfinished_task_rowid (id) VALUES ({0})", currentID
                 );
-                this._db.ExecuteNonQuery(sql);
+                sqlList.Add(sql);   
             }
+
+            // 3. Update문 -> all_task_row_count 
+            string name = GetCorrectTableName(TableMode.AllTaskRowCount);
+            sql = String.Format("UPDATE {0} SET count={1} WHERE rowid=1;", name, lastAllTaskNumber + newTaskCount);
+            sqlList.Add(sql);
+
+
+            // 4. Update문 -> unfinished_task_row_count
+            name = GetCorrectTableName(TableMode.UnfinishedTaskRowCount);
+            sql = String.Format("UPDATE {0} SET count={1} WHERE rowid=1;", name, items.Count);
+            sqlList.Add(sql);
+
+            // 5. Run the ExecuteTransaction
+            this._db.ExecuteTransaction(sqlList);
         }
 
 
