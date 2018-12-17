@@ -6,9 +6,8 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:TODO_list"
         mc:Ignorable="d"
-        Title="MainWindow" Height="567" Width="436" WindowStyle="None"
-        ResizeMode="NoResize" AllowsTransparency="True"
-        Background="{x:Null}">
+        Title="MainWindow" Height="567" Width="436" WindowStyle="None" AllowsTransparency="True"
+        Background="{x:Null}" ResizeMode="CanResizeWithGrip">
     <Border BorderBrush="Gray" BorderThickness="0" Margin="5" Background="White">
         <Border.Effect>
             <DropShadowEffect ShadowDepth="0" BlurRadius="10" Color="Gray" />
@@ -26,21 +25,21 @@
                 <Border.Effect>
                     <DropShadowEffect ShadowDepth="2" BlurRadius="3" Color="Gray" />
                 </Border.Effect>
-                <DockPanel Background="White" HorizontalAlignment="Left" Height="28" LastChildFill="True" VerticalAlignment="Top" Width="436" PreviewMouseMove="System_MouseMove">
+                <DockPanel Background="White" Height="28" VerticalAlignment="Top" PreviewMouseMove="System_MouseMove">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="36*"/>
-                            <ColumnDefinition Width="149*"/>
-                            <ColumnDefinition Width="29*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="29"/>
+                            <ColumnDefinition Width="29"/>
                         </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0" Content="TODO List" VerticalAlignment="Top" FontFamily="Consolas"/>
+                        <Border Grid.Column="1" x:Name="MinimizeButtonBorder">
+                            <Image x:Name="MinimizeButton" Source="resource/minus_icon.png" RenderTransformOrigin="15.515,0.571" Stretch="Fill" StretchDirection="DownOnly" MouseDown="MinimizeButton_MouseDown" MouseEnter="MinimizeButton_MouseEnter" MouseLeave="MinimizeButton_MouseLeave"/>
+                        </Border>
+                        <Border x:Name="ExitButtonBorder" Grid.Column="2">
+                            <Image x:Name="ExitButton" Source="resource/exit_icon_4.png" RenderTransformOrigin="15.515,0.571" MouseDown="ExitButton_MouseDown" MouseEnter="ExitButton_MouseEnter" MouseLeave="ExitButton_MouseLeave"/>
+                        </Border>
                     </Grid>
-                    <Label Content="TODO List" Height="28" VerticalAlignment="Top" Width="376" FontFamily="Consolas"/>
-                    <Border x:Name="MinimizeButtonBorder">
-                        <Image x:Name="MinimizeButton" Source="resource/minus_icon.png" HorizontalAlignment="Left" Height="28" Width="25" RenderTransformOrigin="15.515,0.571" Stretch="Fill" StretchDirection="DownOnly" VerticalAlignment="Bottom" MouseDown="MinimizeButton_MouseDown" Opacity="0.995" MouseEnter="MinimizeButton_MouseEnter" MouseLeave="MinimizeButton_MouseLeave"/>
-                    </Border>
-                    <Border x:Name="ExitButtonBorder">
-                        <Image x:Name="ExitButton" Source="resource/exit_icon_4.png" HorizontalAlignment="Left" Height="28" VerticalAlignment="Top" Width="25" RenderTransformOrigin="15.515,0.571" MouseDown="ExitButton_MouseDown" MouseEnter="ExitButton_MouseEnter" MouseLeave="ExitButton_MouseLeave"/>
-                    </Border>
                 </DockPanel>
             </Border>
 
@@ -57,24 +56,25 @@
                 </Grid>
             </DockPanel>
 
-            <Grid HorizontalAlignment="Left" Height="49" VerticalAlignment="Top" Width="436" Margin="0,106,-10,0" Grid.ColumnSpan="2">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="73*"/>
-                    <ColumnDefinition Width="280*"/>
-                    <ColumnDefinition Width="24*"/>
-                    <ColumnDefinition Width="59*"/>
-                </Grid.ColumnDefinitions>
-                <Label x:Name="todayDate" Content="Label" VerticalContentAlignment="Center" Width="72" HorizontalContentAlignment="Center" FontFamily="Consolas" FontSize="15" Margin="0,0,1,0"/>
-                <Image x:Name='addButton' Source="resource/plus_icon_4.png" Grid.Column="2" HorizontalAlignment="Left" Height="49" VerticalAlignment="Top" Width="49" MouseDown="AddButton_MouseDown" Stretch="Fill" Grid.ColumnSpan="2" Margin="21,0,0,0"/>
-                <TextBox x:Name="newTaskBox" TextWrapping="Wrap" AcceptsReturn="True" Grid.Column="1" HorizontalAlignment="Left" Height="49" VerticalAlignment="Top" Width="298" BorderThickness="3" BorderBrush="#FFF7F7F8" Grid.ColumnSpan="2" KeyDown="NewTaskBox_KeyDown" SelectionBrush="#FF75BAFF">
-                    <TextBox.Resources>
-                        <Style TargetType="{x:Type Border}">
-                            <Setter Property="CornerRadius" Value="3"/>
-                        </Style>
-                    </TextBox.Resources>
-                </TextBox>
-            </Grid>
-
+            <DockPanel>
+                <Grid HorizontalAlignment="Left" Height="49" VerticalAlignment="Top" Width="436" Margin="0,106,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="72"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="49"/>
+                    </Grid.ColumnDefinitions>
+                    <Label x:Name="todayDate" Grid.Column="0" Content="Label" VerticalContentAlignment="Center" Width="72" HorizontalContentAlignment="Center" FontFamily="Consolas" FontSize="15" Margin="0,0,1,0"/>
+                    <TextBox x:Name="newTaskBox" TextWrapping="Wrap" AcceptsReturn="True" Grid.Column="1" HorizontalAlignment="Left" Height="49" VerticalAlignment="Top" Width="298" BorderThickness="3" BorderBrush="#FFF7F7F8" KeyDown="NewTaskBox_KeyDown" SelectionBrush="#FF75BAFF">
+                        <TextBox.Resources>
+                            <Style TargetType="{x:Type Border}">
+                                <Setter Property="CornerRadius" Value="3"/>
+                            </Style>
+                        </TextBox.Resources>
+                    </TextBox>
+                    <Image Grid.Column="2" x:Name='addButton' Source="resource/plus_icon_4.png" HorizontalAlignment="Right" Height="49" VerticalAlignment="Top" MouseDown="AddButton_MouseDown" Stretch="Fill" Grid.ColumnSpan="2" Margin="0"/>
+                </Grid>
+            </DockPanel>
+                
             <DockPanel LastChildFill="True" VerticalAlignment="Stretch" Background="#FF1C1C1C" Margin="0,158,0,0">
                 <!--<Button x:Name="btnUp" Content="Move Up" HorizontalAlignment="Left" Height="28"
                     Margin="10,12,0,0" VerticalAlignment="Top" Width="68" Click="btnUp_Click"/>

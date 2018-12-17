@@ -20,6 +20,13 @@ namespace TODO_list
 {
     public partial class MainWindow : Window
     {
+        enum ListActionMode {
+            Add,
+            Remove,
+            Complete
+        }
+
+
         private Point startPoint = new Point();
         private ObservableCollection<WorkItem> _items = new ObservableCollection<WorkItem>();
         private int startIndex = -1;
@@ -51,22 +58,7 @@ namespace TODO_list
             this.AddItem();
         }
 
-        private bool IsNewTaskBoxEmpty()
-        {
-            string currentText = this.newTaskBox.Text;
-            currentText = currentText.Replace(" ", "");
-            currentText = currentText.Replace("\r\n", "");
-
-            return String.IsNullOrEmpty(currentText);
-        }
-
-        private int GetTodayDate()
-        {
-            int todayDate = Convert.ToInt32(DateTime.Now.ToString("yyMMdd"));
-            return todayDate;
-        }
-
-
+        
         private void AddItem()
         {
             if (IsNewTaskBoxEmpty())
@@ -76,10 +68,8 @@ namespace TODO_list
             }
 
             _items.Insert(0, new WorkItem(GetTodayDate(), newTaskBox.Text, false));
-            this.TotalTaskNumberLabel.Content = _items.Count;
             this.newTaskBox.Clear();
-
-            UpdateStatusLabel("add");
+            UpdateStatusLabel(ListActionMode.Add);
         }
 
 
@@ -115,26 +105,13 @@ namespace TODO_list
             }
         }
 
+
         private void ListView_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             // Get current mouse position
             this.startPoint = e.GetPosition(null);
         }
 
-        private static T FindAncestor<T>(DependencyObject current)
-            where T : DependencyObject
-        {
-            do
-            {
-                if (current is T)
-                {
-                    return (T)current;
-                }
-                current = VisualTreeHelper.GetParent(current);
-            }
-            while (current != null);
-            return null;
-        }
 
         private void ListView_MouseMove(object sender, MouseEventArgs e)
         {
@@ -162,6 +139,7 @@ namespace TODO_list
             }
         }
 
+
         private void ListView_DragEnter(object sender, DragEventArgs e)
         {
             if(!e.Data.GetDataPresent("WorkItem") || sender != e.Source)
@@ -175,18 +153,12 @@ namespace TODO_list
         // =====================================================================================================
         private void removeButton_Click(object sender, RoutedEventArgs e)
         {
-            // Get the listViewItem which contains current button
             ListViewItem listViewItem = FindAncestor<ListViewItem>((DependencyObject)e.OriginalSource);
             WorkItem item = (WorkItem)listView.ItemContainerGenerator.ItemFromContainer(listViewItem);
 
-            // Remove the item from the container
             _items.Remove(item);
-
-            // Decrease total number of tasks
             this._appDB.RemoveUnfinishedTask(item);
-            this.TotalTaskNumberLabel.Content = _items.Count;
-
-            UpdateStatusLabel("remove");
+            UpdateStatusLabel(ListActionMode.Remove);
         }
 
         // =====================================================================================================
@@ -194,16 +166,12 @@ namespace TODO_list
         // =====================================================================================================
         private void completeButton_Click(object sender, RoutedEventArgs e)
         {
-            // Get the listViewItem which contains current button
             ListViewItem listViewItem = FindAncestor<ListViewItem>((DependencyObject)e.OriginalSource);
             WorkItem item = (WorkItem)listView.ItemContainerGenerator.ItemFromContainer(listViewItem);
 
-            // Remove the item from the container
             _items.Remove(item);
-
             this._appDB.UpdateFinishedTask(item);
-
-            UpdateStatusLabel("complete");
+            UpdateStatusLabel(ListActionMode.Complete);
         }
 
 
@@ -242,13 +210,12 @@ namespace TODO_list
             ShutDownProcess();
         }
 
+
         private void ShutDownProcess()
         {
-            // ShutdownWithSaveRecords
             this._appDB.ClearUnfinishedTaskTable();
             this._appDB.SaveUnfinishedTask(this._items);
 
-            // Shut down the item
             Application.Current.Shutdown();
         }
 
@@ -258,10 +225,12 @@ namespace TODO_list
             ExitButtonBorder.Background = new SolidColorBrush(Color.FromArgb(0xFF, 0xD6, 0xD6, 0xD6));
         }
 
+
         private void ExitButton_MouseLeave(object sender, MouseEventArgs e)
         {
             ExitButtonBorder.Background = Brushes.Transparent;
         }
+
 
         // =====================================================================================================
         // NewTaskBox
@@ -277,31 +246,29 @@ namespace TODO_list
             }
         }
 
+
         public void InitializeListView()
         {
-            // Clear the data
             this.listView.Items.Clear();
-
             _items = this._appDB.GetUnfinishedTask();
             this.listView.ItemsSource = _items;
             
-            // Set the today label
             this.todayDate.Content = DateTime.Now.ToString("MM-dd");
 
-            // Set the top-side number label
             InitializeStatusLabel();
         }
 
-        private void UpdateStatusLabel(string mode)
+
+        private void UpdateStatusLabel(ListActionMode mode)
         {
             int todoTaskNumber = this._items.Count;
             int doneTaskNumber = Convert.ToInt32(this.DoneTaskNumberLabel.Content);
             this.TodoTaskNumberLabel.Content = todoTaskNumber;
-            if(mode == "add" || mode =="remove")
+            if(mode == ListActionMode.Add || mode == ListActionMode.Remove)
             {
                 this.TotalTaskNumberLabel.Content = todoTaskNumber + doneTaskNumber;
             }
-            else if(mode == "complete")
+            else if(mode == ListActionMode.Complete)
             {
                 this.DoneTaskNumberLabel.Content = doneTaskNumber + 1;
             }
@@ -318,5 +285,37 @@ namespace TODO_list
             this.DoneTaskNumberLabel.Content = totalTaskCount - todoTaskNumber;
         }
 
+
+        private bool IsNewTaskBoxEmpty()
+        {
+            string currentText = this.newTaskBox.Text;
+            currentText = currentText.Replace(" ", "");
+            currentText = currentText.Replace("\r\n", "");
+
+            return String.IsNullOrEmpty(currentText);
+        }
+
+
+        private int GetTodayDate()
+        {
+            int todayDate = Convert.ToInt32(DateTime.Now.ToString("yyMMdd"));
+            return todayDate;
+        }
+
+
+        private static T FindAncestor<T>(DependencyObject current)
+            where T : DependencyObject
+        {
+            do
+            {
+                if (current is T)
+                {
+                    return (T)current;
+                }
+                current = VisualTreeHelper.GetParent(current);
+            }
+            while (current != null);
+            return null;
+        }
     }
 }
