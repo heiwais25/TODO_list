@@ -33,8 +33,7 @@ namespace TODO_list
 
             this.PreviewKeyDown += new KeyEventHandler(HandleEsc);
 
-            this._appDB = new ApplicationDB();
-            this._appDB.InitializeDB(this.defaultDBDir + this.defaultDBName);
+            this._appDB = new ApplicationDB(this.defaultDBDir + this.defaultDBName);
 
             InitializeListView();
         }
@@ -248,7 +247,6 @@ namespace TODO_list
             // ShutdownWithSaveRecords
             this._appDB.ClearUnfinishedTaskTable();
             this._appDB.SaveUnfinishedTask(this._items);
-            this._appDB.CloseDB();
 
             // Shut down the item
             Application.Current.Shutdown();
@@ -312,8 +310,8 @@ namespace TODO_list
 
         private void InitializeStatusLabel()
         {
-            int todoTaskNumber = this._appDB.GetTableCurrentRowCount("unfinished_task_row_count");
-            int totalTaskCount = this._appDB.GetTableCurrentRowCount("all_task_row_count");
+            int todoTaskNumber = this._appDB.GetTableCurrentRowCount(ApplicationDB.TableMode.UnfinishedTaskRowCount);
+            int totalTaskCount = this._appDB.GetTableCurrentRowCount(ApplicationDB.TableMode.AllTaskRowCount);
 
             this.TotalTaskNumberLabel.Content = totalTaskCount;
             this.TodoTaskNumberLabel.Content = todoTaskNumber;

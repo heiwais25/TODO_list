@@ -37,49 +37,75 @@ namespace DataBase
 
     public class UserDB
     {
-        string _dbFullPath = System.Environment.CurrentDirectory;
-        private SQLiteConnection _connDB = null;
+        private string _dbFullPath = System.Environment.CurrentDirectory;
+        private string _dbConnectionStatement = "";
+
 
         public UserDB(string dbFullPath)
         {
             this._dbFullPath = dbFullPath;
+            this._dbConnectionStatement = String.Format("Data Source={0};Version=3;", this._dbFullPath);
         }
 
-        public void Close()
-        {
-            this._connDB.Close();
-        }
-
-        public void Create()
-        {
-            SQLiteConnection.CreateFile(_dbFullPath);
-        }
-
-        public void Connect()
-        {
-            // DB에 연결
-            this._connDB = new SQLiteConnection(String.Format("Data Source={0};Version=3;", this._dbFullPath));
-            this._connDB.Open();
-        }
 
         public int ExecuteNonQuery(string sql)
         {
-            SQLiteCommand command = new SQLiteCommand(sql, this._connDB);
-            return command.ExecuteNonQuery();
+            int ret = 0;
+            using(SQLiteConnection connDB = new SQLiteConnection(this._dbConnectionStatement))
+            {
+                connDB.Open();
+                using (SQLiteCommand command = new SQLiteCommand(sql, connDB))
+                {
+                    ret = command.ExecuteNonQuery();
+                }
+            }
+            return ret;
         }
 
-        public UserDBReader ExecuteReader(string sql)
+        public List<Dictionary<String, Object>> ExecuteReader(string sql)
         {
-            SQLiteCommand command = new SQLiteCommand(sql, this._connDB);
-            SQLiteDataReader rdr = command.ExecuteReader();
-            UserDBReader dbReader = new UserDBReader(rdr);
-            return dbReader;
+            List<Dictionary<String, Object>> dataTable = new List<Dictionary<String, Object>>();
+            using (SQLiteConnection connDB = new SQLiteConnection(this._dbConnectionStatement))
+            {
+                connDB.Open();
+                using(SQLiteCommand command = new SQLiteCommand(sql, connDB))
+                {
+                    SQLiteDataReader rdr = command.ExecuteReader();
+                    if(rdr != null)
+                    {
+                        var columns = new List<String>();
+                        for(int i=0;i<rdr.FieldCount;i++)
+                        {
+                            columns.Add(rdr.GetName(i));
+                        }
+
+                        while (rdr.Read())
+                        {
+                            Dictionary<String, Object> rowData = new Dictionary<String, Object>();
+                            foreach (string columnName in columns)
+                            {
+                                rowData[columnName] = rdr[columnName];
+                            }
+                            dataTable.Add(rowData);
+                        }
+                    }
+                }
+            }
+            return dataTable;
         }
 
         public long ExecuteScalar(string sql)
         {
-            SQLiteCommand command = new SQLiteCommand(sql, this._connDB);
-            return (long)command.ExecuteScalar();
+            long ret = 0;
+            using (SQLiteConnection connDB = new SQLiteConnection(this._dbConnectionStatement))
+            {
+                connDB.Open();
+                using (SQLiteCommand command = new SQLiteCommand(sql, connDB))
+                {
+                    ret = Convert.ToInt64(command.ExecuteScalar());
+                }
+            }
+            return ret;
         }
     }
 }
