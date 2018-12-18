@@ -176,10 +176,6 @@
     <Resource Include="resource\sky_main.jpg" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="resource\my_exit_icon.png" />
-    <Resource Include="resource\my_min_icon.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="my_exit_icon.png" />
   </ItemGroup>
   <ItemGroup>
@@ -196,6 +192,18 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="resource\new_add.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="resource\white_add_icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="resource\white_cancel_icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="resource\new_trash_icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="resource\new_complete_icon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

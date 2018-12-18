@@ -16,6 +16,7 @@ using System.Collections.ObjectModel;
 using DataBase;
 using System.IO;
 
+
 namespace TODO_list
 {
     public partial class MainWindow : Window
@@ -38,8 +39,7 @@ namespace TODO_list
         {
             InitializeComponent();
 
-            this.PreviewKeyDown += new KeyEventHandler(HandleEsc);
-
+            this.KeyDown += new KeyEventHandler(HandleEsc);
             this._appDB = new ApplicationDB(this.defaultDBDir + this.defaultDBName);
 
             InitializeListView();
@@ -47,10 +47,14 @@ namespace TODO_list
 
         private void HandleEsc(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Escape)
-            {
-                ShutDownProcess();
-            }
+            //if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt) && e.OriginalSource is ListViewItem)
+            //{
+            //    if(e.Key == Key.F4)
+            //    {
+            //        Console.Write("1");
+            //    }
+            //    e.Handled = true;
+            //}
         }
 
         private void AddButton_MouseDown(object sender, MouseButtonEventArgs e)
@@ -70,6 +74,7 @@ namespace TODO_list
             _items.Insert(0, new WorkItem(GetTodayDate(), newTaskBox.Text, false));
             this.newTaskBox.Clear();
             UpdateStatusLabel(ListActionMode.Add);
+            this.listView.ScrollIntoView(this.listView.Items[0]);
         }
 
 
@@ -244,6 +249,13 @@ namespace TODO_list
                     this.AddItem();
                 }
             }
+            else if(e.Key == Key.Escape)
+            {
+                this.newTaskBox.Clear();
+                this.AddNewTaskTextArea.Visibility = Visibility.Hidden;
+                this.AddNewTaskButtonBorder.Visibility = Visibility.Visible;
+            }
+
         }
 
 
@@ -318,25 +330,87 @@ namespace TODO_list
             return null;
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            this.AddNewTaskButton.Visibility = Visibility.Hidden;
-            this.AddNewTaskTextArea.Visibility = Visibility.Visible;
+        //private void Button_Click(object sender, RoutedEventArgs e)
+        //{
+        //    this.AddNewTaskButton.Visibility = Visibility.Hidden;
+        //    this.AddNewTaskTextArea.Visibility = Visibility.Visible;
 
-        }
+        //}
 
         private void AddNewTaskButton_MouseEnter(object sender, MouseEventArgs e)
         {
             BrushConverter bc = new BrushConverter();
-            AddNewTaskButton.Background = (Brush)bc.ConvertFrom("#FF7B7BB4");
-            //AddNewTaskButton.Background = Brushes.White;
         }
 
         private void AddNewTaskButton_MouseLeave(object sender, MouseEventArgs e)
         {
             BrushConverter bc = new BrushConverter();
-            AddNewTaskButton.Background = (Brush)bc.ConvertFrom("#FF393957");
-            //AddNewTaskButton.Background = Brushes.Transparent;
+        }
+
+        private void AddNewTaskButtonBorder_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            this.AddNewTaskButtonBorder.Visibility = Visibility.Hidden;
+            this.AddNewTaskTextArea.Visibility = Visibility.Visible;
+            this.newTaskBox.Focus();
+        }
+
+        private void AddNewTaskButtonBorder_MouseEnter(object sender, MouseEventArgs e)
+        {
+            this.AddNewTaskButtonBorder.Background = Brushes.White;
+            BrushConverter bc = new BrushConverter();
+            this.AddNewTaskButtonBorder.Background = (Brush)bc.ConvertFrom("#FF8181A5");
+        }
+
+        private void AddNewTaskButtonBorder_MouseLeave(object sender, MouseEventArgs e)
+        {
+            BrushConverter bc = new BrushConverter();
+            this.AddNewTaskButtonBorder.Background = (Brush)bc.ConvertFrom("#FF393957");
+        }
+
+        private void AddNewTaskTextArea_MouseEnter(object sender, MouseEventArgs e)
+        {
+            BrushConverter bc = new BrushConverter();
+        }
+
+
+        private void NewTaskBoxArea_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            this.newTaskBox.Focus();
+        }
+
+
+        private void CancelButton_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            this.newTaskBox.Clear();
+            this.AddNewTaskTextArea.Visibility = Visibility.Hidden;
+            this.AddNewTaskButtonBorder.Visibility = Visibility.Visible;
+        }
+
+
+        private void RemoveIconArea_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            ListViewItem listViewItem = FindAncestor<ListViewItem>((DependencyObject)e.OriginalSource);
+            WorkItem item = (WorkItem)listView.ItemContainerGenerator.ItemFromContainer(listViewItem);
+
+            _items.Remove(item);
+            this._appDB.RemoveUnfinishedTask(item);
+            UpdateStatusLabel(ListActionMode.Remove);
+        }
+
+        private void CompleteIconArea_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            ListViewItem listViewItem = FindAncestor<ListViewItem>((DependencyObject)e.OriginalSource);
+            WorkItem item = (WorkItem)listView.ItemContainerGenerator.ItemFromContainer(listViewItem);
+
+            _items.Remove(item);
+            this._appDB.UpdateFinishedTask(item);
+            UpdateStatusLabel(ListActionMode.Complete);
+        }
+
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            ShutDownProcess();
         }
     }
 }
