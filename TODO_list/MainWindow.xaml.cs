@@ -317,5 +317,26 @@ namespace TODO_list
             while (current != null);
             return null;
         }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            this.AddNewTaskButton.Visibility = Visibility.Hidden;
+            this.AddNewTaskTextArea.Visibility = Visibility.Visible;
+
+        }
+
+        private void AddNewTaskButton_MouseEnter(object sender, MouseEventArgs e)
+        {
+            BrushConverter bc = new BrushConverter();
+            AddNewTaskButton.Background = (Brush)bc.ConvertFrom("#FF7B7BB4");
+            //AddNewTaskButton.Background = Brushes.White;
+        }
+
+        private void AddNewTaskButton_MouseLeave(object sender, MouseEventArgs e)
+        {
+            BrushConverter bc = new BrushConverter();
+            AddNewTaskButton.Background = (Brush)bc.ConvertFrom("#FF393957");
+            //AddNewTaskButton.Background = Brushes.Transparent;
+        }
     }
 }

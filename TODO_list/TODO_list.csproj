@@ -169,5 +169,33 @@
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="resource\main_banner.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="resource\sky_main.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="resource\my_exit_icon.png" />
+    <Resource Include="resource\my_min_icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="my_exit_icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="resource\new_minimize.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="resource\new_exit_icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="resource\mountain_banner.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="resource\calendar.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="resource\new_add.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
