@@ -98,6 +98,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="MainWindow.App.cs" />
     <Compile Include="work_item.cs" />
     <Page Include="CalendarWindow.xaml">
       <SubType>Designer</SubType>
