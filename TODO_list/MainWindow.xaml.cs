@@ -47,6 +47,26 @@ namespace TODO_list
 
         private void HandleEsc(object sender, KeyEventArgs e)
         {
+            if(e.Key == Key.Escape)
+            {
+                if(this.AddNewTaskTextArea.Visibility is Visibility.Visible)
+                {
+                    BackToStartUpScreen();
+                }
+                else
+                {
+                    ShutDownProcess();
+                }
+            }
+            if (this.AddNewTaskTextArea.Visibility is Visibility.Hidden)
+            {
+                if (e.Key == Key.Enter)
+                {
+                    ShowNewTaskTextArea();
+                }
+            }
+
+
             //if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt) && e.OriginalSource is ListViewItem)
             //{
             //    if(e.Key == Key.F4)
@@ -220,7 +240,6 @@ namespace TODO_list
         {
             this._appDB.ClearUnfinishedTaskTable();
             this._appDB.SaveUnfinishedTask(this._items);
-
             Application.Current.Shutdown();
         }
 
@@ -249,13 +268,13 @@ namespace TODO_list
                     this.AddItem();
                 }
             }
-            else if(e.Key == Key.Escape)
-            {
-                this.newTaskBox.Clear();
-                this.AddNewTaskTextArea.Visibility = Visibility.Hidden;
-                this.AddNewTaskButtonBorder.Visibility = Visibility.Visible;
-            }
+        }
 
+        public void BackToStartUpScreen()
+        {
+            this.newTaskBox.Clear();
+            this.AddNewTaskTextArea.Visibility = Visibility.Hidden;
+            this.AddNewTaskButtonBorder.Visibility = Visibility.Visible;
         }
 
 
@@ -347,11 +366,18 @@ namespace TODO_list
             BrushConverter bc = new BrushConverter();
         }
 
-        private void AddNewTaskButtonBorder_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+
+        private void ShowNewTaskTextArea()
         {
             this.AddNewTaskButtonBorder.Visibility = Visibility.Hidden;
             this.AddNewTaskTextArea.Visibility = Visibility.Visible;
             this.newTaskBox.Focus();
+        }
+
+
+        private void AddNewTaskButtonBorder_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            ShowNewTaskTextArea();
         }
 
         private void AddNewTaskButtonBorder_MouseEnter(object sender, MouseEventArgs e)
