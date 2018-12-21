@@ -186,12 +186,6 @@ namespace TODO_list
         }
 
 
-        private void AddNewTaskTextArea_MouseEnter(object sender, MouseEventArgs e)
-        {
-            BrushConverter bc = new BrushConverter();
-        }
-
-
         private void NewTaskBoxArea_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             this.newTaskBox.Focus();

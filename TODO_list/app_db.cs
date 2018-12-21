@@ -142,7 +142,7 @@ namespace TODO_list
                 foreach (Dictionary<string, Object> taskOjbect in taskReader)
                 {
                     items.Insert(0, new WorkItem(
-                    Convert.ToInt32(taskOjbect["date"]),
+                    Convert.ToInt64(taskOjbect["date"]),
                     Convert.ToString(taskOjbect["task"]),
                     Convert.ToBoolean(taskOjbect["isFinished"]),
                     Convert.ToInt32(taskOjbect["rowid"])
@@ -173,7 +173,7 @@ namespace TODO_list
                     // 1. Insert문 -> all_task 
                     sql = System.String.Format(
                         "INSERT INTO all_task (date, task, isFinished) VALUES ({0}, '{1}', {2})",
-                        item.fullDate, item.task, item.isFinished
+                        item.startDateTimeTick, item.task, item.isFinished
                     );
                     currentID = ++lastInputRowID;
                     sqlList.Add(sql);
@@ -243,7 +243,7 @@ namespace TODO_list
 
                 sql = System.String.Format(
                     "INSERT INTO all_task (date, task, isFinished) VALUES ({0}, '{1}', {2});",
-                    item.fullDate, item.task, item.isFinished
+                    item.startDateTimeTick, item.task, item.isFinished
                 );
             }
             else

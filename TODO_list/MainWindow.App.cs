@@ -26,7 +26,6 @@ namespace TODO_list
             this.listView.ItemsSource = _items;
 
             this.todayDate.Content = DateTime.Now.ToString("MM-dd");
-
             InitializeStatusLabel();
         }
 
@@ -36,10 +35,12 @@ namespace TODO_list
             this.KeyDown += new KeyEventHandler(HandleCommonKeys);
         }
 
+
         private void InitializeAppDB()
         {
             this._appDB = new ApplicationDB(this.defaultDBDir + this.defaultDBName);
         }
+
 
         private void AddNewTask()
         {
@@ -96,7 +97,7 @@ namespace TODO_list
 
         private void InsertNewTaskToTaskList()
         {
-            this._items.Insert(0, new WorkItem(GetTodayDate(), newTaskBox.Text, false));
+            this._items.Insert(0, new WorkItem(DateTime.Now.Ticks, newTaskBox.Text, false));
         }
 
         

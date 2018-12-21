@@ -9,19 +9,32 @@ namespace TODO_list
     public class WorkItem
     {
         public int rowId { get; set; }
-        public int fullDate { get; set; }
-        public string date { get; set; }
+        public int startDateFull { get; set; }
+
+        public long startDateTimeTick { get; set; }
+        public string startDateTime { get; set; }
+        public long finishDateTimeTick { get; set; }
+        public string finishDateTime { get; set; }
+
+        public int finishDateFull { get; set; }
+        public string startDate { get; set; }
+        public string finishDate { get; set; }
         public string task { get; set; }
         public bool isFinished { get; set; }
 
         // fullDate : yyMMdd
-        public WorkItem(int fullDate, string task, bool isFinished, int rowId = 0)
+        public WorkItem(long startDateTimeTick, string task, bool isFinished, int rowId = 0)
         {
-            this.fullDate = fullDate;
-            // Month
-            string month = Convert.ToString((int)((fullDate % 10000) / 100));
-            string date = Convert.ToString((int)((fullDate % 100)));
-            this.date = month + "-" + date;
+            this.startDateTimeTick = startDateTimeTick;
+            DateTime dt = new DateTime(startDateTimeTick);
+            this.startDateTime = dt.ToString("MM-dd");
+
+            this.finishDateTimeTick = 0;
+            this.finishDateTime = "";
+
+            //string month = Convert.ToString((int)((startDateFull % 10000) / 100));
+            //string date = Convert.ToString((int)((startDateFull % 100)));
+            //this.startDate = month + "-" + date;
             this.task = task;
             this.isFinished = isFinished;
 
